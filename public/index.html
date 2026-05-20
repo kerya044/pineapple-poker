@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🍍 Crazy Pineapple Poker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --felt:    #1b6b35;
+      --felt2:   #155529;
+      --border:  #7b4a1a;
+      --gold:    #f0c040;
+      --gold2:   #ffe070;
+      --chip:    #e8e0cc;
+      --red:     #d0202a;
+      --blue:    #2a6bcc;
+      --green:   #1e9e50;
+      --orange:  #e87820;
+      --dark:    #0e1a12;
+      --ink:     #1a1a1a;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: radial-gradient(ellipse at 60% 0%, #1a4020, #0a1008 80%);
+      color: #f0ead8;
+      min-height: 100vh;
+      overscroll-behavior: none;
+    }
+
+    /* ─── Screens ──────────────────────────────────────────────────────────── */
+    .screen { display: none; min-height: 100vh; }
+    .screen.on { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #sGame { display: none; flex-direction: column; height: 100dvh; padding: 6px; gap: 5px; }
+    #sGame.on { display: flex; }
+
+    /* ─── Lobby ────────────────────────────────────────────────────────────── */
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 8vw, 4rem);
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 2px 18px rgba(240,192,64,.4);
+      letter-spacing: .02em;
+      margin-bottom: 4px;
+    }
+    .tagline { color: #7db88a; font-size: .85rem; margin-bottom: 32px; letter-spacing: .05em; text-transform: uppercase; }
+    .card-form { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 10px; }
+    input[type=text] {
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.35);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input[type=text]::placeholder { color: rgba(255,255,255,.3); }
+    input[type=text]:focus { border-color: var(--gold); }
+
+    .divider { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,.25); font-size: .8rem; }
+    .divider::before, .divider::after { content:''; flex: 1; height: 1px; background: rgba(255,255,255,.12); }
+    .row { display: flex; gap: 8px; }
+
+    /* ─── Buttons ──────────────────────────────────────────────────────────── */
+    .btn {
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(.96); }
+    .btn:hover  { filter: brightness(1.12); }
+    .btn-gold  { background: var(--gold); color: var(--ink); flex: 1; }
+    .btn-blue  { background: var(--blue); color: #fff; flex: 1; }
+    .btn-red   { background: var(--red);  color: #fff; }
+    .btn-green { background: var(--green);color: #fff; }
+    .btn-orange{ background: var(--orange);color: #fff; }
+    .btn-ghost { background: rgba(255,255,255,.08); color: #ccc; border: 1px solid rgba(255,255,255,.15); }
+    .btn-sm    { padding: 8px 14px; font-size: .8rem; border-radius: 9px; }
+
+    /* ─── Waiting room ─────────────────────────────────────────────────────── */
+    .code-panel {
+      background: rgba(0,0,0,.4);
+      border: 2px solid var(--gold);
+      border-radius: 16px;
+      padding: 16px 28px;
+      text-align: center;
+      margin: 12px 0;
+    }
+    .code-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 8px;
+    }
+    .code-hint { font-size: .75rem; color: rgba(255,255,255,.35); margin-top: 4px; }
+    .plist { background: rgba(0,0,0,.3); border-radius: 14px; padding: 14px; width: 300px; max-height: 240px; overflow-y: auto; }
+    .plist h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--gold); margin-bottom: 10px; }
+    .pli { padding: 8px 12px; border-radius: 9px; background: rgba(255,255,255,.05); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; font-size: .88rem; }
+    .wait-msg { font-size: .8rem; color: rgba(255,255,255,.4); text-align: center; }
+
+    /* ─── Top bar ──────────────────────────────────────────────────────────── */
+    #topBar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 10px;
+      background: rgba(0,0,0,.4);
+      border-radius: 10px;
+      font-size: .75rem;
+      flex-shrink: 0;
+    }
+    .phase-pill {
+      background: var(--gold);
+      color: var(--ink);
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: .72rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Opponents ────────────────────────────────────────────────────────── */
+    #opponents {
+      display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
+      flex-shrink: 0;
+    }
+    .seat {
+      background: rgba(0,0,0,.5);
+      border: 2px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 7px 9px;
+      min-width: 90px;
+      max-width: 130px;
+      text-align: center;
+      transition: border-color .2s, box-shadow .2s;
+      position: relative;
+    }
+    .seat.active {
+      border-color: var(--gold);
+      box-shadow: 0 0 14px rgba(240,192,64,.45);
+      animation: pulse .9s infinite alternate;
+    }
+    .seat.folded { opacity: .38; }
+    @keyframes pulse {
+      from { box-shadow: 0 0 6px rgba(240,192,64,.3); }
+      to   { box-shadow: 0 0 18px rgba(240,192,64,.7); }
+    }
+    .seat-name { font-size: .75rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seat-chips { font-size: .68rem; color: var(--gold); }
+    .seat-bet   { font-size: .65rem; color: #90ee90; min-height: 14px; }
+    .seat-status{ font-size: .65rem; color: #ff9999; min-height: 14px; }
+    .seat-cards { display: flex; gap: 2px; justify-content: center; margin-top: 4px; flex-wrap: wrap; }
+    .dealer-dot {
+      position: absolute; top: 4px; right: 5px;
+      width: 14px; height: 14px;
+      background: #fff; color: var(--ink);
+      border-radius: 50%;
+      font-size: .55rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ─── Mini cards (opponents) ───────────────────────────────────────────── */
+    .mc {
+      width: 16px; height: 23px;
+      border-radius: 3px;
+      font-size: .48rem;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(0,0,0,.2);
+    }
+    .mc-back { background: repeating-linear-gradient(45deg,#1e4a9a,#1e4a9a 3px,#163a7a 3px,#163a7a 6px); }
+    .mc-front { background: #fff; }
+    .mc.red   { color: var(--red); }
+    .mc.black { color: #111; }
+
+    /* ─── Table center ─────────────────────────────────────────────────────── */
+    #table {
+      flex: 1;
+      background: radial-gradient(ellipse at center, #236b38, #165027, #0e3a1c);
+      border-radius: 80px;
+      border: 7px solid var(--border);
+      box-shadow: inset 0 0 50px rgba(0,0,0,.45), 0 4px 24px rgba(0,0,0,.6);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      padding: 14px;
+      min-height: 100px;
+    }
+    .pot-lbl { font-size: .9rem; color: var(--gold); font-weight: 700; }
+    #cCards  { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+    .cc-hint { color: rgba(255,255,255,.2); font-size: .75rem; font-style: italic; }
+
+    /* ─── Full playing cards ───────────────────────────────────────────────── */
+    .card {
+      width: 48px; height: 68px;
+      border-radius: 7px;
+      background: #fafaf5;
+      border: 2px solid #ccc;
+      box-shadow: 2px 3px 8px rgba(0,0,0,.35);
+      display: flex; flex-direction: column;
+      padding: 3px 4px;
+      font-weight: 800;
+      transition: transform .18s, border-color .18s, box-shadow .18s;
+      flex-shrink: 0;
+      cursor: default;
+      position: relative;
+    }
+    .card .cv { font-size: .78rem; line-height: 1.1; }
+    .card .cs { font-size: .95rem; line-height: 1; margin-top: 1px; }
+    .card .cs2 {
+      font-size: .95rem; line-height: 1;
+      position: absolute; bottom: 3px; right: 4px;
+      transform: rotate(180deg);
+    }
+    .card.red   { color: var(--red); }
+    .card.black { color: #111; }
+    .card.pick  { cursor: pointer; }
+    .card.pick:hover { transform: translateY(-7px); border-color: #ff9900; box-shadow: 0 8px 16px rgba(0,0,0,.4); }
+    .card.chosen { transform: translateY(-11px); border-color: #ff3300; box-shadow: 0 0 14px rgba(255,60,0,.55); }
+
+    /* ─── Winner box ───────────────────────────────────────────────────────── */
+    #winBox {
+      background: rgba(0,0,0,.72);
+      border: 3px solid var(--gold);
+      border-radius: 16px;
+      padding: 12px 16px;
+      text-align: center;
+      display: none;
+      flex-shrink: 0;
+    }
+    #winBox h2 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.1rem; margin-bottom: 6px; }
+    #winText   { font-size: .82rem; line-height: 1.7; }
+
+    /* ─── My area ──────────────────────────────────────────────────────────── */
+    #myArea {
+      background: rgba(0,0,0,.4);
+      border-radius: 14px;
+      padding: 10px 12px;
+      flex-shrink: 0;
+    }
+    #myInfo { display: flex; justify-content: space-between; margin-bottom: 7px; font-size: .8rem; }
+    .my-name  { font-weight: 700; }
+    .my-chips { color: var(--gold); font-weight: 700; }
+    #myHand   { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 7px; }
+    #myBetLbl { text-align: center; font-size: .72rem; color: #90ee90; min-height: 16px; }
+
+    /* Discard prompt */
+    #discardBox {
+      background: rgba(255,140,0,.18);
+      border: 2px solid var(--orange);
+      border-radius: 10px;
+      padding: 7px 10px;
+      text-align: center;
+      font-size: .8rem;
+      display: none;
+      margin-bottom: 7px;
+    }
+
+    /* ─── Action buttons ───────────────────────────────────────────────────── */
+    #actions { display: none; flex-wrap: wrap; gap: 7px; justify-content: center; }
+    .raise-wrap { display: flex; align-items: center; gap: 6px; }
+    input[type=range] {
+      width: 90px;
+      accent-color: var(--orange);
+      cursor: pointer;
+    }
+
+    /* ─── Log ──────────────────────────────────────────────────────────────── */
+    #logPanel {
+      font-size: .68rem;
+      color: rgba(255,255,255,.35);
+      text-align: center;
+      min-height: 18px;
+      padding: 0 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    /* ─── Toast ────────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      background: rgba(200,30,30,.92); color: #fff;
+      padding: 9px 20px; border-radius: 10px;
+      font-size: .85rem; z-index: 9999;
+      display: none; max-width: 280px; text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+    }
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- ══════════════ LOBBY ══════════════ -->
+<div id="sLobby" class="screen on">
+  <div class="logo">🍍 Pineapple</div>
+  <div class="tagline">Crazy Pineapple Poker · 2–8 joueurs</div>
+  <div class="card-form">
+    <input id="nameIn" type="text" placeholder="Ton pseudo" maxlength="18" autocomplete="off" spellcheck="false">
+    <button class="btn btn-gold" onclick="doCreate()">Créer une partie</button>
+    <div class="divider">rejoindre une salle</div>
+    <div class="row">
+      <input id="codeIn" type="text" placeholder="Code — ex: AB12CD" maxlength="6" style="text-transform:uppercase;flex:1" spellcheck="false">
+      <button class="btn btn-blue btn-sm" onclick="doJoin()">Rejoindre</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ WAITING ══════════════ -->
+<div id="sWait" class="screen">
+  <div class="logo" style="font-size:2rem">🍍 Pineapple Poker</div>
+  <div class="code-panel">
+    <div class="code-val" id="wCode">——</div>
+    <div class="code-hint">Partage ce code avec tes amis</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn btn-ghost btn-sm" onclick="copyCode()">📋 Copier le code</button>
+    <button class="btn btn-ghost btn-sm" onclick="shareLink()">🔗 Partager le lien</button>
+  </div>
+  <div class="plist">
+    <h3>Joueurs connectés</h3>
+    <div id="wPlayers"></div>
+  </div>
+  <button class="btn btn-gold" id="startBtn" onclick="doStart()" style="width:220px;display:none;margin-top:12px">▶ Lancer la partie</button>
+  <div class="wait-msg" id="wMsg" style="margin-top:8px">En attente de joueurs...</div>
+</div>
+
+<!-- ══════════════ GAME ══════════════ -->
+<div id="sGame">
+
+  <!-- Top bar -->
+  <div id="topBar">
+    <span>🍍 Pineapple</span>
+    <span class="phase-pill" id="phaseTag">-</span>
+    <span id="roomTag" style="color:rgba(255,255,255,.4)">-</span>
+  </div>
+
+  <!-- Opponents -->
+  <div id="opponents"></div>
+
+  <!-- Table -->
+  <div id="table">
+    <div class="pot-lbl" id="potLbl">Pot : 0 jetons</div>
+    <div id="cCards"><span class="cc-hint">Flop pas encore révélé…</span></div>
+  </div>
+
+  <!-- Winner -->
+  <div id="winBox">
+    <h2>🏆 Résultat du tour</h2>
+    <div id="winText"></div>
+    <button class="btn btn-gold btn-sm" id="nextBtn" onclick="doNextRound()" style="margin-top:10px;display:none">
+      ▶ Tour suivant
+    </button>
+  </div>
+
+  <!-- My area -->
+  <div id="myArea">
+    <div id="myInfo">
+      <span class="my-name" id="myNameLbl">Moi</span>
+      <span class="my-chips" id="myChipsLbl">1000 jetons</span>
+    </div>
+    <div id="myHand"></div>
+    <div id="myBetLbl"></div>
+    <div id="discardBox">🎴 À toi de te défausser — clique sur la carte à écarter !</div>
+    <div id="actions">
+      <button class="btn btn-red btn-sm"    onclick="doAct('fold')">Coucher</button>
+      <button class="btn btn-ghost btn-sm"  id="btnCheck" onclick="doAct('check')">Checker ✓</button>
+      <button class="btn btn-green btn-sm"  id="btnCall"  onclick="doAct('call')">Suivre</button>
+      <div class="raise-wrap">
+        <input type="range" id="raiseRange" oninput="onRangeInput()">
+        <button class="btn btn-orange btn-sm" onclick="doRaise()">Relancer <span id="raiseVal">0</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div id="logPanel"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ─── Client state ─────────────────────────────────────────────────────────────
+const sock = io();
+let myId   = null;
+let myRoom = null;
+let state  = null;
+let amHost = false;
+
+// ─── Socket events ────────────────────────────────────────────────────────────
+sock.on('connect',         () => myId = sock.id);
+sock.on('created', ({roomId}) => { myRoom = roomId; showWait(roomId); });
+sock.on('joined',  ({roomId}) => { myRoom = roomId; showWait(roomId); });
+sock.on('err',     msg        => toast(msg));
+
+sock.on('state', s => {
+  state  = s;
+  myRoom = s.roomId;
+  const me = s.players.find(p => p.id === myId);
+  if (!me) return;
+  amHost = me.isHost;
+  if (s.phase === 'waiting') { screen('sWait'); renderWait(s); }
+  else                       { screen('sGame'); renderGame(s, me); }
+});
+
+// ─── User actions ─────────────────────────────────────────────────────────────
+function doCreate()    { sock.emit('create', { name: val('nameIn') || 'Joueur' }); }
+function doJoin()      { sock.emit('join',   { name: val('nameIn') || 'Joueur', roomId: val('codeIn') || '' }); }
+function doStart()     { sock.emit('start'); }
+function doAct(action) { sock.emit('action', { action }); }
+function doRaise()     { sock.emit('action', { action:'raise', amount: +g('raiseRange').value }); }
+function doNextRound() { sock.emit('nextRound'); }
+function doDiscard(i)  { sock.emit('discard', { cardIndex: i }); }
+
+function copyCode()  { navigator.clipboard?.writeText(myRoom||''); toast('Code copié !'); }
+function shareLink() {
+  const url = `${location.origin}?room=${myRoom}`;
+  navigator.share ? navigator.share({ title:'Pineapple Poker', url })
+                  : (navigator.clipboard?.writeText(url), toast('Lien copié !'));
+}
+
+// ─── Screens ──────────────────────────────────────────────────────────────────
+function screen(id) {
+  ['sLobby','sWait'].forEach(s => g(s).classList.toggle('on', s===id));
+  g('sGame').classList.toggle('on', id==='sGame');
+  if (id !== 'sGame') g('sGame').style.display = 'none';
+}
+
+function showWait(code) {
+  screen('sWait');
+  g('wCode').textContent = code || myRoom || '——';
+}
+
+// ─── Render : waiting room ────────────────────────────────────────────────────
+function renderWait(s) {
+  g('wCode').textContent = s.roomId;
+  g('wPlayers').innerHTML = s.players.map(p =>
+    `<div class="pli">${p.isHost?'👑':''} ${esc(p.name)}</div>`
+  ).join('');
+  g('startBtn').style.display = amHost ? 'block' : 'none';
+  g('wMsg').textContent = amHost
+    ? (s.players.length < 2 ? 'En attente d\'autres joueurs…' : '✔ Prêt — tu peux lancer !')
+    : 'En attente que l\'hôte lance la partie…';
+}
+
+// ─── Render : game ────────────────────────────────────────────────────────────
+const PHASES = {
+  preflop:'Pré-flop', flop:'Flop', discard:'Défausse',
+  turn:'Turn', river:'River', showdown:'Showdown'
+};
+
+function renderGame(s, me) {
+  // Top bar
+  g('phaseTag').textContent = PHASES[s.phase] || s.phase;
+  g('roomTag').textContent  = `Salle : ${s.roomId}`;
+
+  // Pot + community cards
+  g('potLbl').textContent = `💰 Pot : ${s.pot} jetons`;
+  const cc = g('cCards');
+  cc.innerHTML = s.community.length
+    ? s.community.map(c => cardHtml(c)).join('')
+    : '<span class="cc-hint">Flop pas encore révélé…</span>';
+
+  // Opponents
+  const opps = s.players.filter(p => p.id !== myId);
+  g('opponents').innerHTML = opps.map(p => {
+    const active  = s.curIdx>=0 && s.players[s.curIdx]?.id === p.id;
+    const dealer  = s.dealerIdx>=0 && s.players[s.dealerIdx]?.id === p.id;
+    let status = '';
+    if      (p.disconnected)                   status = '⚠ déco';
+    else if (p.folded)                         status = 'couché';
+    else if (p.allIn)                          status = '🔥 all-in';
+    else if (p.needsDiscard)                   status = '⏳ défausse…';
+    else if (s.phase==='showdown' && p.handName) status = p.handName;
+
+    const cards = p.hand
+      ? p.hand.map(c => `<div class="mc mc-front ${isRed(c.s)?'red':'black'}">${c.v}${c.s}</div>`).join('')
+      : Array.from({length:p.handSize||0}).map(()=>'<div class="mc mc-back"></div>').join('');
+
+    return `<div class="seat${active?' active':''}${p.folded?' folded':''}">
+      ${dealer ? '<div class="dealer-dot">D</div>' : ''}
+      <div class="seat-name">${esc(p.name)}</div>
+      <div class="seat-chips">💰 ${p.chips}</div>
+      <div class="seat-bet">${p.bet ? `mise : ${p.bet}` : ''}</div>
+      <div class="seat-status">${status}</div>
+      <div class="seat-cards">${cards}</div>
+    </div>`;
+  }).join('');
+
+  // My info
+  g('myNameLbl').textContent  = me.name + (amHost ? ' 👑' : '');
+  g('myChipsLbl').textContent = `💰 ${me.chips} jetons`;
+  g('myBetLbl').textContent   = me.bet ? `Mise actuelle : ${me.bet}` : '';
+
+  // My hand
+  const canDiscard = s.phase==='discard' && !me.folded && !me.discarded;
+  g('myHand').innerHTML = (me.hand||[]).map((c,i) =>
+    cardHtml(c, canDiscard ? `pick" onclick="doDiscard(${i})` : '')
+  ).join('');
+  g('discardBox').style.display = canDiscard ? 'block' : 'none';
+
+  // Actions
+  const myTurn = s.curIdx>=0
+    && s.players[s.curIdx]?.id === myId
+    && !['waiting','discard','showdown'].includes(s.phase);
+  g('actions').style.display = myTurn ? 'flex' : 'none';
+  if (myTurn) {
+    const myBet   = me.bet || 0;
+    const canCheck = myBet >= s.curBet;
+    g('btnCheck').style.display = canCheck ? '' : 'none';
+    g('btnCall').style.display  = canCheck ? 'none' : '';
+    g('btnCall').textContent = `Suivre +${s.curBet - myBet}`;
+    const sl  = g('raiseRange');
+    const minR = s.curBet + s.bb;
+    sl.min = minR; sl.max = me.chips + myBet;
+    if (+sl.value < minR) sl.value = minR;
+    onRangeInput();
+  }
+
+  // Winner box
+  const wb = g('winBox');
+  if (s.phase==='showdown' && s.winners) {
+    wb.style.display = 'block';
+    g('winText').innerHTML = s.winners.map(w =>
+      `🏆 <b>${esc(w.name)}</b> remporte <b>${w.amount}</b> jetons${w.handName?' — <em>'+esc(w.handName)+'</em>':''}`
+    ).join('<br>');
+    g('nextBtn').style.display = amHost ? 'inline-block' : 'none';
+  } else {
+    wb.style.display = 'none';
+  }
+
+  // Log
+  if (s.log?.length) g('logPanel').textContent = s.log[s.log.length-1];
+}
+
+// ─── Card HTML ────────────────────────────────────────────────────────────────
+function cardHtml(c, extraClass='') {
+  const col = isRed(c.s) ? 'red' : 'black';
+  return `<div class="card ${col} ${extraClass}">
+    <div class="cv">${c.v}</div>
+    <div class="cs">${c.s}</div>
+    <div class="cs2">${c.s}</div>
+  </div>`;
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+const isRed = s => s==='♥'||s==='♦';
+const g     = id => document.getElementById(id);
+const val   = id => (g(id).value||'').trim();
+const esc   = s  => (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function onRangeInput() {
+  g('raiseVal').textContent = g('raiseRange').value;
+}
+
+function toast(msg) {
+  const t = g('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.style.display='none', 2800);
+}
+
+// ─── Auto-join via URL ────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(location.search);
+  const room   = params.get('room');
+  if (room) {
+    g('codeIn').value = room.toUpperCase();
+    g('codeIn').scrollIntoView({ behavior:'smooth' });
+  }
+});
+
+// Enter keys
+['nameIn','codeIn'].forEach(id => g(id).addEventListener('keydown', e => {
+  if (e.key==='Enter') (id==='codeIn' ? doJoin() : doCreate());
+}));
+g('codeIn').addEventListener('input', e => e.target.value = e.target.value.toUpperCase());
+</script>
+</body>
+</html>

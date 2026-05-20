@@ -448,10 +448,20 @@ io.on('connection', sock => {
 });
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
 app.get("/", (req, res) => {
   res.send("🍍 Server OK");
 });
+app.post("/create-game", (req, res) => {
+  console.log("create-game called");
 
+  const gameId = Math.random().toString(36).substring(2, 8);
+
+  res.json({
+    gameId: gameId,
+    message: "Game created"
+  });
+});
 httpServer.listen(PORT, () =>
   console.log(`🍍 Crazy Pineapple Poker → http://localhost:${PORT}`)
 );

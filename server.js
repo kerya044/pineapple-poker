@@ -446,8 +446,12 @@ io.on('connection', sock => {
     bcast(room);
   });
 });
-
 const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+  res.send("🍍 Poker server is running");
+});
+
 httpServer.listen(PORT, () =>
   console.log(`🍍 Crazy Pineapple Poker → http://localhost:${PORT}`)
 );

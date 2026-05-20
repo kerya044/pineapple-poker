@@ -449,8 +449,10 @@ io.on('connection', sock => {
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.static('public'));
+
 app.get("/", (req, res) => {
-  res.send("🍍 Server OK");
+  res.sendFile(__dirname + "/public/index.html");
 });
 app.post("/create-game", (req, res) => {
   console.log("create-game called");

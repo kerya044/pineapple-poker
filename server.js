@@ -449,10 +449,10 @@ io.on('connection', sock => {
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('docs'));
 
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+  res.sendFile(__dirname + "/docs/index.html");
 });
 app.post("/create-game", (req, res) => {
   console.log("create-game called");

@@ -449,7 +449,7 @@ io.on('connection', sock => {
 const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
-  res.send("🍍 Poker server is running");
+  res.send("🍍 Server OK");
 });
 
 httpServer.listen(PORT, () =>
